@@ -1,0 +1,186 @@
+{
+  "entities": {
+    "UserProfile": {
+      "title": "UserProfile",
+      "description": "Authenticated user profile, preferences, and account tier.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "displayName": { "type": "string" },
+        "email": { "type": "string", "format": "email" },
+        "photoUrl": { "type": "string" },
+        "country": { "type": "string" },
+        "language": { "type": "string", "enum": ["pt", "en"] },
+        "themeMode": { "type": "string", "enum": ["system", "dark", "light"] },
+        "plan": { "type": "string", "enum": ["FREE", "PREMIUM"] },
+        "role": { "type": "string", "enum": ["USER", "ADMIN"] },
+        "bio": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "displayName", "email", "country", "language", "themeMode", "plan", "role", "createdAt", "updatedAt"]
+    },
+    "AcademyProgress": {
+      "title": "AcademyProgress",
+      "description": "User course completion progress in Money Academy.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "courseId": { "type": "string" },
+        "completedLessonIds": { "type": "array" },
+        "progressPercent": { "type": "integer" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "courseId", "completedLessonIds", "progressPercent", "createdAt", "updatedAt"]
+    },
+    "DesignProject": {
+      "title": "DesignProject",
+      "description": "Saved creative studio project from Money Design.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "templateType": { "type": "string", "enum": ["POSTER", "AD", "EBOOK_COVER", "SOCIAL_POST", "LOGO", "BANNER", "PRODUCT_CARD"] },
+        "title": { "type": "string" },
+        "headline": { "type": "string" },
+        "subheadline": { "type": "string" },
+        "ctaText": { "type": "string" },
+        "brandName": { "type": "string" },
+        "paletteId": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "templateType", "title", "headline", "subheadline", "ctaText", "brandName", "paletteId", "createdAt", "updatedAt"]
+    },
+    "AiGeneration": {
+      "title": "AiGeneration",
+      "description": "Saved generation from Money AI powered by Firebase AI Logic.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "mode": { "type": "string", "enum": ["BUSINESS_IDEAS", "AD_COPY", "EBOOK_IDEAS", "PRODUCT_DESC", "MARKETING_STRATEGY", "BUSINESS_PLAN", "SOCIAL_CONTENT", "TRANSLATE"] },
+        "prompt": { "type": "string" },
+        "response": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "mode", "prompt", "response", "createdAt"]
+    },
+    "ActivityLog": {
+      "title": "ActivityLog",
+      "description": "User activity audit trail.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "actionType": { "type": "string" },
+        "title": { "type": "string" },
+        "detail": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "actionType", "title", "createdAt"]
+    },
+    "PayoutMethod": {
+      "title": "PayoutMethod",
+      "description": "Configured payout method metadata for future Money Wallet settlements.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "provider": { "type": "string", "enum": ["MPESA", "EMOLA", "BANK_MZ", "PAYPAL", "STRIPE"] },
+        "accountLabel": { "type": "string" },
+        "maskedAccount": { "type": "string" },
+        "currency": { "type": "string", "enum": ["MZN", "USD", "EUR"] },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "provider", "accountLabel", "maskedAccount", "currency", "createdAt", "updatedAt"]
+    },
+    "MarketProduct": {
+      "title": "MarketProduct",
+      "description": "Digital product, ebook, course, or service listed on Money Market.",
+      "type": "object",
+      "properties": {
+        "sellerId": { "type": "string" },
+        "sellerName": { "type": "string" },
+        "sellerCountry": { "type": "string" },
+        "title": { "type": "string" },
+        "description": { "type": "string" },
+        "category": { "type": "string", "enum": ["EBOOK", "COURSE", "SERVICE", "DESIGN_KIT", "AFFILIATE"] },
+        "priceUsd": { "type": "number" },
+        "priceMzn": { "type": "number" },
+        "affiliatePercent": { "type": "integer" },
+        "ratingAvg": { "type": "number" },
+        "reviewCount": { "type": "integer" },
+        "paletteId": { "type": "string" },
+        "status": { "type": "string", "enum": ["ACTIVE", "FLAGGED", "ARCHIVED"] },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["sellerId", "sellerName", "sellerCountry", "title", "description", "category", "priceUsd", "priceMzn", "affiliatePercent", "ratingAvg", "reviewCount", "paletteId", "status", "createdAt", "updatedAt"]
+    },
+    "ProductReview": {
+      "title": "ProductReview",
+      "description": "User rating and review on a Money Market product.",
+      "type": "object",
+      "properties": {
+        "authorId": { "type": "string" },
+        "authorName": { "type": "string" },
+        "rating": { "type": "integer" },
+        "comment": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["authorId", "authorName", "rating", "comment", "createdAt"]
+    },
+    "ContentReport": {
+      "title": "ContentReport",
+      "description": "Moderation report for marketplace listings or sellers.",
+      "type": "object",
+      "properties": {
+        "reporterId": { "type": "string" },
+        "targetType": { "type": "string", "enum": ["MARKET_PRODUCT", "SELLER"] },
+        "targetId": { "type": "string" },
+        "reason": { "type": "string" },
+        "status": { "type": "string", "enum": ["OPEN", "REVIEWED", "DISMISSED"] },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["reporterId", "targetType", "targetId", "reason", "status", "createdAt", "updatedAt"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": { "$ref": "#/entities/UserProfile" },
+      "description": "Private user profiles isolated per user ID."
+    },
+    "/users/{userId}/academy_progress/{courseId}": {
+      "schema": { "$ref": "#/entities/AcademyProgress" },
+      "description": "Per-user course progress in Money Academy."
+    },
+    "/users/{userId}/design_projects/{projectId}": {
+      "schema": { "$ref": "#/entities/DesignProject" },
+      "description": "Per-user creative projects in Money Design."
+    },
+    "/users/{userId}/ai_generations/{generationId}": {
+      "schema": { "$ref": "#/entities/AiGeneration" },
+      "description": "Per-user Money AI prompt and response history."
+    },
+    "/users/{userId}/activity_logs/{activityId}": {
+      "schema": { "$ref": "#/entities/ActivityLog" },
+      "description": "Per-user activity history."
+    },
+    "/users/{userId}/payout_methods/{methodId}": {
+      "schema": { "$ref": "#/entities/PayoutMethod" },
+      "description": "Per-user configured payout method metadata."
+    },
+    "/market_products/{productId}": {
+      "schema": { "$ref": "#/entities/MarketProduct" },
+      "description": "Money Market digital products and services."
+    },
+    "/market_products/{productId}/reviews/{reviewId}": {
+      "schema": { "$ref": "#/entities/ProductReview" },
+      "description": "Reviews on Money Market listings."
+    },
+    "/content_reports/{reportId}": {
+      "schema": { "$ref": "#/entities/ContentReport" },
+      "description": "Moderation and fraud reports."
+    }
+  }
+}

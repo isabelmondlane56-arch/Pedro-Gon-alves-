@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<resources>
+    <string name="firestore_database_id" translatable="false">ai-studio-android-moneyhub-838d8362-34c1-4f8b-bf64-2961aaf9bbbf</string>
+    <string name="recaptcha_site_key" translatable="false">6LfPuiguAAAAAMXEQM3_UHu6kZVkrmyDY8AfoyHw</string>
+</resources>

@@ -1,0 +1,357 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Global Safety Net: Default Deny
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // --- GLOBAL HARDENED HELPERS ---
+    function isValidId(id) {
+      return id is string && id.size() >= 1 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isAdmin() {
+      return isSignedIn() && (
+        exists(/databases/$(database)/documents/admins/$(request.auth.uid)) ||
+        (request.auth.token.email == 'isabelmondlane56@gmail.com' && request.auth.token.email_verified == true)
+      );
+    }
+
+    function isValidTimestamp(ts) {
+      return ts is timestamp && ts <= request.time;
+    }
+
+    // --- ENTITY VALIDATORS ---
+    function isValidUserProfile(data) {
+      return data.userId is string && data.userId.size() >= 1 && data.userId.size() <= 128 &&
+             data.displayName is string && data.displayName.size() >= 1 && data.displayName.size() <= 80 &&
+             data.email is string && data.email.size() >= 3 && data.email.size() <= 120 &&
+             (!('photoUrl' in data) || (data.photoUrl is string && data.photoUrl.size() <= 500)) &&
+             data.country is string && data.country.size() >= 2 && data.country.size() <= 60 &&
+             data.language in ['pt', 'en'] &&
+             data.themeMode in ['system', 'dark', 'light'] &&
+             data.plan in ['FREE', 'PREMIUM'] &&
+             data.role in ['USER', 'ADMIN'] &&
+             (!('bio' in data) || (data.bio is string && data.bio.size() <= 300)) &&
+             isValidTimestamp(data.createdAt) &&
+             isValidTimestamp(data.updatedAt);
+    }
+
+    function isValidAcademyProgress(data) {
+      return data.userId is string && data.userId.size() >= 1 && data.userId.size() <= 128 &&
+             data.courseId is string && data.courseId.size() >= 1 && data.courseId.size() <= 64 &&
+             data.completedLessonIds is list && data.completedLessonIds.size() <= 50 &&
+             (data.completedLessonIds.size() == 0 || data.completedLessonIds[0] is string) &&
+             data.progressPercent is int && data.progressPercent >= 0 && data.progressPercent <= 100 &&
+             isValidTimestamp(data.createdAt) &&
+             isValidTimestamp(data.updatedAt);
+    }
+
+    function isValidDesignProject(data) {
+      return data.userId is string && data.userId.size() >= 1 && data.userId.size() <= 128 &&
+             data.templateType in ['POSTER', 'AD', 'EBOOK_COVER', 'SOCIAL_POST', 'LOGO', 'BANNER', 'PRODUCT_CARD'] &&
+             data.title is string && data.title.size() >= 1 && data.title.size() <= 100 &&
+             data.headline is string && data.headline.size() <= 120 &&
+             data.subheadline is string && data.subheadline.size() <= 240 &&
+             data.ctaText is string && data.ctaText.size() <= 60 &&
+             data.brandName is string && data.brandName.size() <= 60 &&
+             data.paletteId is string && data.paletteId.size() >= 1 && data.paletteId.size() <= 40 &&
+             isValidTimestamp(data.createdAt) &&
+             isValidTimestamp(data.updatedAt);
+    }
+
+    function isValidAiGeneration(data) {
+      return data.userId is string && data.userId.size() >= 1 && data.userId.size() <= 128 &&
+             data.mode in ['BUSINESS_IDEAS', 'AD_COPY', 'EBOOK_IDEAS', 'PRODUCT_DESC', 'MARKETING_STRATEGY', 'BUSINESS_PLAN', 'SOCIAL_CONTENT', 'TRANSLATE'] &&
+             data.prompt is string && data.prompt.size() >= 1 && data.prompt.size() <= 1500 &&
+             data.response is string && data.response.size() >= 1 && data.response.size() <= 12000 &&
+             isValidTimestamp(data.createdAt);
+    }
+
+    function isValidActivityLog(data) {
+      return data.userId is string && data.userId.size() >= 1 && data.userId.size() <= 128 &&
+             data.actionType is string && data.actionType.size() >= 1 && data.actionType.size() <= 40 &&
+             data.title is string && data.title.size() >= 1 && data.title.size() <= 120 &&
+             (!('detail' in data) || (data.detail is string && data.detail.size() <= 250)) &&
+             isValidTimestamp(data.createdAt);
+    }
+
+    function isValidPayoutMethod(data) {
+      return data.userId is string && data.userId.size() >= 1 && data.userId.size() <= 128 &&
+             data.provider in ['MPESA', 'EMOLA', 'BANK_MZ', 'PAYPAL', 'STRIPE'] &&
+             data.accountLabel is string && data.accountLabel.size() >= 2 && data.accountLabel.size() <= 80 &&
+             data.maskedAccount is string && data.maskedAccount.size() >= 3 && data.maskedAccount.size() <= 60 &&
+             data.currency in ['MZN', 'USD', 'EUR'] &&
+             isValidTimestamp(data.createdAt) &&
+             isValidTimestamp(data.updatedAt);
+    }
+
+    function isValidMarketProduct(data) {
+      return data.sellerId is string && data.sellerId.size() >= 1 && data.sellerId.size() <= 128 &&
+             data.sellerName is string && data.sellerName.size() >= 1 && data.sellerName.size() <= 80 &&
+             data.sellerCountry is string && data.sellerCountry.size() >= 2 && data.sellerCountry.size() <= 60 &&
+             data.title is string && data.title.size() >= 3 && data.title.size() <= 100 &&
+             data.description is string && data.description.size() >= 10 && data.description.size() <= 1000 &&
+             data.category in ['EBOOK', 'COURSE', 'SERVICE', 'DESIGN_KIT', 'AFFILIATE'] &&
+             data.priceUsd is number && data.priceUsd >= 0 && data.priceUsd <= 100000 &&
+             data.priceMzn is number && data.priceMzn >= 0 && data.priceMzn <= 10000000 &&
+             data.affiliatePercent is int && data.affiliatePercent >= 0 && data.affiliatePercent <= 80 &&
+             data.ratingAvg is number && data.ratingAvg >= 0 && data.ratingAvg <= 5 &&
+             data.reviewCount is int && data.reviewCount >= 0 && data.reviewCount <= 1000000 &&
+             data.paletteId is string && data.paletteId.size() >= 1 && data.paletteId.size() <= 40 &&
+             data.status in ['ACTIVE', 'FLAGGED', 'ARCHIVED'] &&
+             isValidTimestamp(data.createdAt) &&
+             isValidTimestamp(data.updatedAt);
+    }
+
+    function isValidProductReview(data) {
+      return data.authorId is string && data.authorId.size() >= 1 && data.authorId.size() <= 128 &&
+             data.authorName is string && data.authorName.size() >= 1 && data.authorName.size() <= 80 &&
+             data.rating is int && data.rating >= 1 && data.rating <= 5 &&
+             data.comment is string && data.comment.size() >= 2 && data.comment.size() <= 400 &&
+             isValidTimestamp(data.createdAt);
+    }
+
+    function isValidContentReport(data) {
+      return data.reporterId is string && data.reporterId.size() >= 1 && data.reporterId.size() <= 128 &&
+             data.targetType in ['MARKET_PRODUCT', 'SELLER'] &&
+             data.targetId is string && data.targetId.size() >= 1 && data.targetId.size() <= 128 &&
+             data.reason is string && data.reason.size() >= 5 && data.reason.size() <= 300 &&
+             data.status in ['OPEN', 'REVIEWED', 'DISMISSED'] &&
+             isValidTimestamp(data.createdAt) &&
+             isValidTimestamp(data.updatedAt);
+    }
+
+    // --- COLLECTION RULES ---
+
+    match /admins/{adminUid} {
+      allow get: if isOwner(adminUid);
+      allow list, write: if false;
+    }
+
+    match /users/{userId} {
+      allow get: if (isOwner(userId) || isAdmin()) && isValidId(userId);
+      allow list: if isAdmin();
+
+      allow create: if isOwner(userId) &&
+                       isValidId(userId) &&
+                       incoming().userId == request.auth.uid &&
+                       incoming().plan == 'FREE' &&
+                       incoming().role == 'USER' &&
+                       incoming().keys().hasAll(['userId', 'displayName', 'email', 'country', 'language', 'themeMode', 'plan', 'role', 'createdAt', 'updatedAt']) &&
+                       incoming().keys().hasOnly(['userId', 'displayName', 'email', 'photoUrl', 'country', 'language', 'themeMode', 'plan', 'role', 'bio', 'createdAt', 'updatedAt']) &&
+                       isValidUserProfile(incoming());
+
+      allow update: if isSignedIn() &&
+                       isValidId(userId) &&
+                       isValidUserProfile(incoming()) &&
+                       incoming().userId == existing().userId &&
+                       incoming().email == existing().email &&
+                       incoming().createdAt == existing().createdAt && (
+                         isAdmin() ||
+                         (
+                           isOwner(userId) &&
+                           incoming().plan == existing().plan &&
+                           incoming().role == existing().role &&
+                           incoming().diff(existing()).affectedKeys().hasOnly(['displayName', 'photoUrl', 'country', 'language', 'themeMode', 'bio', 'updatedAt'])
+                         )
+                       );
+
+      allow delete: if isOwner(userId) && isValidId(userId);
+
+      // Subcollection: Academy Progress
+      match /academy_progress/{courseId} {
+        allow get: if isOwner(userId) && isValidId(courseId);
+        allow list: if isOwner(userId);
+
+        allow create: if isOwner(userId) &&
+                         isValidId(courseId) &&
+                         incoming().userId == request.auth.uid &&
+                         incoming().courseId == courseId &&
+                         incoming().keys().hasAll(['userId', 'courseId', 'completedLessonIds', 'progressPercent', 'createdAt', 'updatedAt']) &&
+                         incoming().keys().hasOnly(['userId', 'courseId', 'completedLessonIds', 'progressPercent', 'createdAt', 'updatedAt']) &&
+                         isValidAcademyProgress(incoming());
+
+        allow update: if isOwner(userId) &&
+                         isValidId(courseId) &&
+                         isValidAcademyProgress(incoming()) &&
+                         incoming().userId == existing().userId &&
+                         incoming().courseId == existing().courseId &&
+                         incoming().createdAt == existing().createdAt &&
+                         incoming().diff(existing()).affectedKeys().hasOnly(['completedLessonIds', 'progressPercent', 'updatedAt']);
+
+        allow delete: if isOwner(userId) && isValidId(courseId);
+      }
+
+      // Subcollection: Design Projects
+      match /design_projects/{projectId} {
+        allow get: if isOwner(userId) && isValidId(projectId);
+        allow list: if isOwner(userId);
+
+        allow create: if isOwner(userId) &&
+                         isValidId(projectId) &&
+                         incoming().userId == request.auth.uid &&
+                         incoming().keys().hasAll(['userId', 'templateType', 'title', 'headline', 'subheadline', 'ctaText', 'brandName', 'paletteId', 'createdAt', 'updatedAt']) &&
+                         incoming().keys().hasOnly(['userId', 'templateType', 'title', 'headline', 'subheadline', 'ctaText', 'brandName', 'paletteId', 'createdAt', 'updatedAt']) &&
+                         isValidDesignProject(incoming());
+
+        allow update: if isOwner(userId) &&
+                         isValidId(projectId) &&
+                         isValidDesignProject(incoming()) &&
+                         incoming().userId == existing().userId &&
+                         incoming().createdAt == existing().createdAt &&
+                         incoming().diff(existing()).affectedKeys().hasOnly(['templateType', 'title', 'headline', 'subheadline', 'ctaText', 'brandName', 'paletteId', 'updatedAt']);
+
+        allow delete: if isOwner(userId) && isValidId(projectId);
+      }
+
+      // Subcollection: AI Generations
+      match /ai_generations/{generationId} {
+        allow get: if isOwner(userId) && isValidId(generationId);
+        allow list: if isOwner(userId);
+
+        allow create: if isOwner(userId) &&
+                         isValidId(generationId) &&
+                         incoming().userId == request.auth.uid &&
+                         incoming().keys().hasAll(['userId', 'mode', 'prompt', 'response', 'createdAt']) &&
+                         incoming().keys().hasOnly(['userId', 'mode', 'prompt', 'response', 'createdAt']) &&
+                         isValidAiGeneration(incoming());
+
+        allow update: if false;
+        allow delete: if isOwner(userId) && isValidId(generationId);
+      }
+
+      // Subcollection: Activity Logs
+      match /activity_logs/{activityId} {
+        allow get: if isOwner(userId) && isValidId(activityId);
+        allow list: if isOwner(userId);
+
+        allow create: if isOwner(userId) &&
+                         isValidId(activityId) &&
+                         incoming().userId == request.auth.uid &&
+                         incoming().keys().hasAll(['userId', 'actionType', 'title', 'createdAt']) &&
+                         incoming().keys().hasOnly(['userId', 'actionType', 'title', 'detail', 'createdAt']) &&
+                         isValidActivityLog(incoming());
+
+        allow update: if false;
+        allow delete: if isOwner(userId) && isValidId(activityId);
+      }
+
+      // Subcollection: Payout Methods
+      match /payout_methods/{methodId} {
+        allow get: if isOwner(userId) && isValidId(methodId);
+        allow list: if isOwner(userId);
+
+        allow create: if isOwner(userId) &&
+                         isValidId(methodId) &&
+                         incoming().userId == request.auth.uid &&
+                         incoming().keys().hasAll(['userId', 'provider', 'accountLabel', 'maskedAccount', 'currency', 'createdAt', 'updatedAt']) &&
+                         incoming().keys().hasOnly(['userId', 'provider', 'accountLabel', 'maskedAccount', 'currency', 'createdAt', 'updatedAt']) &&
+                         isValidPayoutMethod(incoming());
+
+        allow update: if isOwner(userId) &&
+                         isValidId(methodId) &&
+                         isValidPayoutMethod(incoming()) &&
+                         incoming().userId == existing().userId &&
+                         incoming().createdAt == existing().createdAt &&
+                         incoming().diff(existing()).affectedKeys().hasOnly(['provider', 'accountLabel', 'maskedAccount', 'currency', 'updatedAt']);
+
+        allow delete: if isOwner(userId) && isValidId(methodId);
+      }
+    }
+
+    // --- MARKETPLACE COLLECTION ---
+    match /market_products/{productId} {
+      allow get: if isSignedIn() && isValidId(productId);
+      allow list: if isSignedIn() && (existing().status == 'ACTIVE' || existing().sellerId == request.auth.uid || isAdmin());
+
+      allow create: if isSignedIn() &&
+                       isValidId(productId) &&
+                       incoming().sellerId == request.auth.uid &&
+                       incoming().status == 'ACTIVE' &&
+                       incoming().ratingAvg == 0 &&
+                       incoming().reviewCount == 0 &&
+                       incoming().keys().hasAll(['sellerId', 'sellerName', 'sellerCountry', 'title', 'description', 'category', 'priceUsd', 'priceMzn', 'affiliatePercent', 'ratingAvg', 'reviewCount', 'paletteId', 'status', 'createdAt', 'updatedAt']) &&
+                       incoming().keys().hasOnly(['sellerId', 'sellerName', 'sellerCountry', 'title', 'description', 'category', 'priceUsd', 'priceMzn', 'affiliatePercent', 'ratingAvg', 'reviewCount', 'paletteId', 'status', 'createdAt', 'updatedAt']) &&
+                       isValidMarketProduct(incoming());
+
+      allow update: if isSignedIn() &&
+                       isValidId(productId) &&
+                       isValidMarketProduct(incoming()) &&
+                       incoming().sellerId == existing().sellerId &&
+                       incoming().createdAt == existing().createdAt && (
+                         isAdmin() ||
+                         (
+                           existing().sellerId == request.auth.uid &&
+                           existing().status != 'FLAGGED' &&
+                           incoming().status in ['ACTIVE', 'ARCHIVED'] &&
+                           incoming().diff(existing()).affectedKeys().hasOnly(['title', 'description', 'category', 'priceUsd', 'priceMzn', 'affiliatePercent', 'paletteId', 'status', 'updatedAt'])
+                         ) ||
+                         (
+                           existing().status == 'ACTIVE' &&
+                           incoming().status == existing().status &&
+                           incoming().diff(existing()).affectedKeys().hasOnly(['ratingAvg', 'reviewCount', 'updatedAt'])
+                         )
+                       );
+
+      allow delete: if isSignedIn() && isValidId(productId) && (existing().sellerId == request.auth.uid || isAdmin());
+
+      match /reviews/{reviewId} {
+        allow get: if isSignedIn() && isValidId(reviewId);
+        allow list: if isSignedIn();
+
+        allow create: if isSignedIn() &&
+                         isValidId(reviewId) &&
+                         incoming().authorId == request.auth.uid &&
+                         incoming().keys().hasAll(['authorId', 'authorName', 'rating', 'comment', 'createdAt']) &&
+                         incoming().keys().hasOnly(['authorId', 'authorName', 'rating', 'comment', 'createdAt']) &&
+                         isValidProductReview(incoming()) &&
+                         exists(/databases/$(database)/documents/market_products/$(productId));
+
+        allow update: if false;
+        allow delete: if isSignedIn() && isValidId(reviewId) && (existing().authorId == request.auth.uid || isAdmin());
+      }
+    }
+
+    // --- MODERATION REPORTS ---
+    match /content_reports/{reportId} {
+      allow get: if isSignedIn() && isValidId(reportId) && (existing().reporterId == request.auth.uid || isAdmin());
+      allow list: if isSignedIn() && (existing().reporterId == request.auth.uid || isAdmin());
+
+      allow create: if isSignedIn() &&
+                       isValidId(reportId) &&
+                       incoming().reporterId == request.auth.uid &&
+                       incoming().status == 'OPEN' &&
+                       incoming().keys().hasAll(['reporterId', 'targetType', 'targetId', 'reason', 'status', 'createdAt', 'updatedAt']) &&
+                       incoming().keys().hasOnly(['reporterId', 'targetType', 'targetId', 'reason', 'status', 'createdAt', 'updatedAt']) &&
+                       isValidContentReport(incoming());
+
+      allow update: if isAdmin() &&
+                       isValidId(reportId) &&
+                       isValidContentReport(incoming()) &&
+                       incoming().reporterId == existing().reporterId &&
+                       incoming().createdAt == existing().createdAt &&
+                       incoming().diff(existing()).affectedKeys().hasOnly(['status', 'updatedAt']);
+
+      allow delete: if isAdmin() && isValidId(reportId);
+    }
+  }
+}

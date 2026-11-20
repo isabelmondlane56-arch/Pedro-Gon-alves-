@@ -1,0 +1,6 @@
+{
+  "name": "Money Hub",
+  "description": "Plataforma internacional de oportunidades, negócios digitais, academia, estúdio criativo, assistente IA e marketplace.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
